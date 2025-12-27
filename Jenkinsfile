@@ -8,16 +8,17 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                echo '📦 Checking out code from GitHub...'
+                echo '📦 Cloning repository...'
                 checkout scm
+                sh 'ls -la'
             }
         }
 
-        stage('Build WAR with Maven') {
+        stage('Build WAR') {
             steps {
-                echo '🔨 Building WAR file...'
+                echo '🔨 Building WAR with Maven...'
                 sh 'mvn clean package -DskipTests'
             }
         }
@@ -39,16 +40,6 @@ pipeline {
                     echo \$DOCKER_CREDENTIALS_PSW | docker login -u \$DOCKER_CREDENTIALS_USR --password-stdin
                     docker push ${DOCKER_IMAGE}:${BUILD_TAG}
                     docker push ${DOCKER_IMAGE}:latest
-                    docker logout
-                """
-            }
-        }
-
-        stage('Update Kubernetes Manifests') {
-            steps {
-                echo '📝 Updating Kubernetes deployment...'
-                sh """
-                    sed -i 's|image: suresh53/esewa:.*|image: suresh53/esewa:${BUILD_TAG}|g' k8s/deployment.yaml
                 """
             }
         }
@@ -57,25 +48,25 @@ pipeline {
             steps {
                 echo '🚀 Deploying to Kubernetes...'
                 sh """
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
+                    cat deployment.yaml | sed 's|image: suresh53/esewa:.*|image: ${DOCKER_IMAGE}:${BUILD_TAG}|g' | kubectl apply -f -
+                    kubectl apply -f service.yaml
                     kubectl rollout status deployment/esewa-app --timeout=2m
                 """
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify') {
             steps {
                 echo '✅ Verifying deployment...'
                 sh """
-                    echo "=== Pods Status ==="
+                    echo "=== Pods ==="
                     kubectl get pods -l app=esewa
                     echo ""
-                    echo "=== Service Info ==="
+                    echo "=== Service ==="
                     kubectl get svc esewa-service
                     echo ""
-                    echo "=== Application URL ==="
-                    minikube service esewa-service --url || echo "Run: minikube service esewa-service --url"
+                    echo "=== Access URL ==="
+                    minikube service esewa-service --url || true
                 """
             }
         }
@@ -84,14 +75,13 @@ pipeline {
     post {
         success {
             echo '🎉 Pipeline completed successfully!'
-            echo "✅ Application deployed with image: ${DOCKER_IMAGE}:${BUILD_TAG}"
+            echo "✅ Deployed: ${DOCKER_IMAGE}:${BUILD_TAG}"
         }
         failure {
-            echo '❌ Pipeline failed! Check logs above.'
+            echo '❌ Pipeline failed!'
         }
         always {
-            echo '🧹 Cleaning up...'
-            sh 'docker system prune -f || true'
+            sh 'docker logout || true'
         }
     }
 }
