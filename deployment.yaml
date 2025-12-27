@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esewa-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: esewa
+  template:
+    metadata:
+      labels:
+        app: esewa
+    spec:
+      containers:
+        - name: esewa-container
+          image: suresh53/esewa:BUILD_NUMBER
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
