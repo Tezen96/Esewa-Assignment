@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esewa-app
+  labels:
+    app: esewa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esewa
+  template:
+    metadata:
+      labels:
+        app: esewa
+    spec:
+      containers:
+        - name: esewa-container
+          image: docker.io/suresh53/esewa_app:v1
+          ports:
+            - containerPort: 8080
