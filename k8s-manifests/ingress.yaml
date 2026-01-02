@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: esewa-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  # Add default backend for IP access
+  defaultBackend:
+    service:
+      name: esewa-service-nodeport
+      port:
+        number: 8080
+  # Domain-specific routing
+  rules:
+    - host: bksuresh.com.np
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: esewa-service-nodeport
+                port:
+                  number: 8080
