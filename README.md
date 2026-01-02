@@ -139,9 +139,14 @@ sudo systemctl enable --now containerd
 > Starts containerd service and ensures it runs automatically after reboot.
 
 **Verification:**
-```bash
-sudo systemctl status containerd
-```
+
+<div align="center">
+  <img src="Screenshots/Task1/containerd.png" 
+       alt="containerd Service Running" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 1: containerd service status.</i></p>
+</div>
 
 ---
 
@@ -195,12 +200,6 @@ sudo modprobe overlay
 sudo modprobe br_netfilter
 ```
 > Immediately activates kernel modules required for container networking.
-
-**Verification:**
-```bash
-lsmod | grep overlay
-lsmod | grep br_netfilter
-```
 
 #### c. Configure System Networking Parameters
 ```bash
@@ -278,22 +277,29 @@ sudo kubeadm join 192.168.1.69:6443 --token <token> \
 
 ## ✅ Verification
 
-### 1. Check Node Status
-```bash
-kubectl get nodes
-```
+#### 1. Check Node Status
 
-**Expected Output:**
-```
-NAME          STATUS   ROLES           AGE   VERSION
-k8s-master    Ready    control-plane   10m   v1.28.15
-k8s-worker    Ready    <none>          5m    v1.28.15
-```
 
-### 2. View Detailed Node Information
-```bash
-kubectl get nodes -o wide
-```
+<div align="center">
+  <img src="Screenshots/Task1/02-nodes-ready.png" 
+       alt="nodes ready" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 2: Confirms that the Kubernetes cluster is up and running.</i></p>
+</div>
+
+---
+#### 2. View Detailed Node Information
+
+<div align="center">
+  <img src="Screenshots/Task1/cluster-info.png" 
+       alt="Cluster-info" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 3:Provides an overview of the Kubernetes cluster details.</i></p>
+</div>
+
+---
 
 ### 3. Verify Cluster Health
 ```bash
