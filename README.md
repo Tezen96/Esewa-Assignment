@@ -560,4 +560,136 @@ kubectl logs esewa-app-66b9c6b458-dt6ck --tail=20
 ✅ **Application Status:** Tomcat started, ready to serve requests  
 
 ---
+## ✅ Task 3: Service Exposure
 
+### NodePort Service
+
+**File:** k8s-manifests/service-nodeport.yaml
+
+
+**Key Configuration:**
+- **Service Type:** NodePort (exposes service on static port on each node)
+- **Selector:** `app: esewa` (matches deployment label)
+- **Port:** 8080 (internal service port)
+- **TargetPort:** 8080 (container port)
+- **NodePort:** 30080 (external access port)
+
+**Deploy Command:**
+```bash
+kubectl apply -f service-nodeport.yaml
+```
+
+**Verification:**
+<div align="center">
+  <img src="Screenshots/Task3/01-get-svc.png" 
+       alt="service-info" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 01: displaying the list of services in the cluster</i></p>
+</div>
+
+---
+<div align="center">
+  <img src="Screenshots/Task3/04-nodes-details.png" 
+       alt="service-info" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 02: Cluster nodes information showing master and worker nodes with their internal IP addresses</i></p>
+</div>
+
+
+---
+
+**NodePort Access URLs:**
+- Master node: http://192.168.1.69:30080
+- Worker node: http://192.168.1.68:30080
+
+
+<div align="center">
+  <img src="Screenshots/Task3/1.68-nodeport.png" 
+       alt="NodePort access via worker node" 
+       width="45%" 
+       style="display: inline-block; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin-right: 10px; vertical-align: top;">
+  <img src="Screenshots/Task3/1.69-nodeport.png" 
+       alt="NodePort access via master node" 
+       width="45%" 
+       style="display: inline-block; border: 1px solid #ddd; border-radius: 4px; padding: 5px; vertical-align: top;">
+  <p><i>Figure 02: Successful external access to Java application via NodePort through master and worker nodes.</i></p>
+</div>
+---
+
+### Ingress Configuration
+
+#### Step 1: Install Ingress Controller
+
+**Install NGINX Ingress Controller:**
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/baremetal/deploy.yaml
+```
+
+**Verify Installation:**
+
+
+
+<div align="center">
+  <img src="Screenshots/Task3/A.png" 
+       alt="Ingress Controller" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 02: Successfully running Ingress NGINX controller pods.</i></p>
+</div>
+
+---
+<div align="center">
+  <img src="Screenshots/Task3/B.png" 
+       alt="Ingress Controller" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 02: List of services in the ingress-nginx namespace.</i></p>
+</div>
+
+---
+
+#### Step 2: Create Ingress Resource
+
+**File:** k8s-manifests/ingress.yaml`
+
+
+**Key Configuration:**
+- **Host:** `bksuresh.com.np` (domain name)
+- **Path:** `/` (root path)
+- **Backend Service:** `esewa-service-nodeport` on port 8080
+- **Ingress Class:** nginx
+
+**Deploy Command:**
+```bash
+kubectl apply -f ingress.yaml
+```
+
+**Verification:**
+```bash
+$ kubectl get ingress
+
+```
+<div align="center">
+  <img src="Screenshots/Task3/C.png" 
+       alt="get ingress" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 06: List of Ingress resources in the cluster</i></p>
+</div>
+
+```bash
+$ kubectl describe ingress esewa-ingress
+
+```
+
+<div align="center">
+  <img src="Screenshots/Task3/D.png" 
+       alt="describe ingress" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 07: Verification of esewa-ingress configuration and routing rules</i></p>
+</div>
+
+---
