@@ -129,7 +129,7 @@ Esewa-Assignment/
 | Node | Role | IP Address | RAM | CPU | Disk | Status |
 |------|------|------------|-----|-----|------|--------|
 | **k8s-master** | Control Plane | 192.168.1.69 | 4 GB | 2 cores | 20 GB | Ready |
-| **k8s-worker** | Worker | 192.168.1.64 | 4 GB | 2 cores | 30 GB | Ready |
+| **k8s-worker** | Worker | 192.168.1.68 | 4 GB | 2 cores | 30 GB | Ready |
 
 ---
 
