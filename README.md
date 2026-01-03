@@ -9,19 +9,55 @@
 
 ## 📑 Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Lab Environment](#Environment)
-- [Task 1: Kubernetes Cluster Setup](#task-1-kubernetes-cluster-setup)
-- [Task 2: Java Application Deployment](#task-2-java-application-deployment)
-- [Task 3: Service Exposure](#task-3-service-exposure)
-- [Task 4: ELK Stack Setup](#task-4-elk-stack-setup)
-- [Task 5: Monitoring & Verification](#task-5-monitoring--verification)
-- [Access Information](#access-information)
-- [Troubleshooting](#troubleshooting)
-- [Lessons Learned](#lessons-learned)
-- [Conclusion](#conclusion)
-- [Contact](#contact)
+## 📑 Table of Contents
+
+- [Overview](#-overview)
+- [Architecture](#️-architecture)
+- [Lab Environment](#lab-environment)
+- [Task 1: Kubernetes Cluster Setup](#-task-1-kubernetes-cluster-setup)
+  - [Cluster Information](#cluster-information)
+  - [Kubernetes Master Node Setup](#-kubernetes-master-node-setup)
+  - [Worker Node Setup](#-worker-node-setup)
+  - [Verification](#-verification)
+- [Task 2: Java Application Deployment](#-task-2-java-application-deployment)
+  - [Application Overview](#application-overview)
+  - [Build WAR File](#step-1-build-war-file)
+  - [Containerize Application](#step-2-containerize-application)
+  - [Build Docker Image](#step-3-build-docker-image)
+  - [Push to Docker Hub](#step-4-push-to-docker-hub)
+  - [Create Kubernetes Deployment](#step-5-create-kubernetes-deployment)
+  - [Verify Deployment](#step-6-verify-deployment)
+  - [Summary](#summary)
+- [Task 3: Service Exposure](#-task-3-service-exposure)
+  - [NodePort Service](#nodeport-service)
+  - [Ingress Configuration](#ingress-configuration)
+  - [Traffic Flow Explanation](#traffic-flow-explanation)
+  - [Access Methods](#access-methods)
+  - [Summary](#summary-1)
+- [Task 4: ELK Stack Setup](#-task-4-elk-stack-setup)
+  - [Overview](#41-overview)
+  - [Component Specifications](#42-component-specifications)
+  - [Namespace Setup](#43-namespace-setup)
+  - [Elasticsearch Deployment](#44-elasticsearch-deployment)
+  - [Kibana Deployment](#45-kibana-deployment)
+  - [Filebeat Configuration](#46-filebeat-configuration)
+  - [Filebeat DaemonSet](#47-filebeat-daemonset)
+  - [Deployment Verification](#48-deployment-verification)
+  - [Elasticsearch Index Verification](#49-elasticsearch-index-verification)
+- [Task 5: Monitoring & Verification](#-task-5-monitoring--verification)
+  - [Kibana Dashboard Setup](#51-kibana-dashboard-setup)
+  - [Creating the Dashboard](#52-creating-the-dashboard)
+  - [Traffic Simulation](#53-traffic-simulation)
+  - [Log Verification in Kibana](#54-log-verification-in-kibana)
+  - [Verification Results](#55-verification-results)
+  - [Pod Resource Consumption](#56-pod-resource-consumption)
+- [Access Information](#-access-information)
+- [Troubleshooting](#️-troubleshooting)
+- [Resource Usage Analysis](#-resource-usage-analysis)
+- [Lessons Learned](#-lessons-learned)
+- [Conclusion](#-conclusion)
+- [Repository Structure](#-repository-structure)
+- [Contact](#-contact)
 
 ---
 
@@ -310,61 +346,6 @@ sudo kubeadm join 192.168.1.69:6443 --token <token> \
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
   <p><i>Figure 4:All pods are running State.</i></p>
 </div>
-
----
-
-## 🛠️ Troubleshooting - Task 1
-
-### Issue: Worker Node Join Failure
-
-**Error Message:**
-```bash
-[ERROR FileAvailable--etc-kubernetes-pki-ca.crt]: /etc/kubernetes/pki/ca.crt already exists
-```
-
----
-
-### Quick Fix Steps
-
-**Step 1: Verify containerd**
-```bash
-sudo systemctl status containerd
-sudo systemctl restart containerd
-```
-
-**Step 2: Set Hostname**
-```bash
-sudo hostnamectl set-hostname k8s-worker
-```
-
-**Step 3: Update /etc/hosts**
-```bash
-sudo vi /etc/hosts
-# Add these lines:
-192.168.1.69    k8s-master
-127.0.0.1       k8s-worker
-```
-
-**Step 4: Clean Previous Config**
-```bash
-sudo kubeadm reset -f
-sudo rm -rf /etc/cni/net.d /etc/kubernetes/ /var/lib/kubelet/ /var/lib/etcd/
-sudo iptables -F && sudo iptables -t nat -F && sudo iptables -t mangle -F && sudo iptables -X
-sudo systemctl restart containerd
-```
-
-**Step 5: Rejoin Cluster**
-```bash
-sudo kubeadm join 192.168.1.69:6443 --token  \
-  --discovery-token-ca-cert-hash sha256:
-```
-
-**Step 6: Verify**
-```bash
-kubectl get nodes
-# Both nodes  show "Ready" status
-```
-
 ---
 
 ## 📦 Task 2: Java Application Deployment
@@ -821,100 +802,6 @@ http://bksuresh.com.np:32690
 - SSL/TLS termination support (future enhancement)
 - Load balancing across multiple pods
 - Centralized configuration management
-
----
-[🔝 Back to Top](#table-of-contents)
-
-
-## 🛠️ Troubleshooting - Task 3
-
-
-### Issue 1: Ingress Controller Not Working
-
-**Symptom:**
-```bash
-kubectl get ingress
-NAME            CLASS   HOSTS             ADDRESS   PORTS   AGE
-esewa-ingress   nginx   bksuresh.com.np   <none>    80      5m
-```
-
-**Root Cause:**
-- Ingress Controller pods not running
-- Missing IngressClass
-
-**Solution:**
-```bash
-# Check Ingress Controller pods
-kubectl get pods -n ingress-nginx
-
-# If not running, reinstall
-kubectl delete namespace ingress-nginx
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/baremetal/deploy.yaml
-
-# Wait for pods to be ready
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=120s
-```
-
----
-
-### Issue 2: Domain Not Resolving (Ingress)
-
-**Symptom:**
-```bash
-curl: (6) Could not resolve host: bksuresh.com.np
-```
-
-**Root Cause:**
-- hosts file not configured
-- Wrong IP address in hosts file
-
-**Solution:**
-
-**Windows:**
-```cmd
-# Edit as Administrator
-notepad C:\Windows\System32\drivers\etc\hosts
-
-# Add line:
-192.168.1.68  bksuresh.com.np
-```
-
-
----
-
-### Issue 2: Ingress Returns 404 Error
-
-**Symptom:**
-```bash
-curl http://bksuresh.com.np:32690
-<html>
-<head><title>404 Not Found</title></head>
-</html>
-```
-
-**Root Cause:**
-- Backend service name mismatch
-- Wrong service port in Ingress
-
-**Solution:**
-```bash
-# Verify backend service exists
-kubectl get svc esewa-service-nodeport
-
-# Check Ingress configuration
-kubectl describe ingress esewa-ingress
-
-# Ensure service name and port match
-# In ingress.yaml:
-backend:
-  service:
-    name: esewa-service-nodeport  # Must match actual service name
-    port:
-      number: 8080                # Must match service port
-```
 
 ---
 
@@ -1863,3 +1750,41 @@ This implementation provides:
 
 
 ## 📁 Repository Structure
+```
+Esewa-Assignment/
+│
+├── ELK/                                    # 📊 ELK Stack Configuration
+│   ├── 01-namespace.yaml                   # Creates 'logging' namespace
+│   ├── 02-elasticsearch-master.yaml        # Elasticsearch StatefulSet (1 replica)
+│   ├── 03-kibana.yaml                      # Kibana Deployment (NodePort: 30562)
+│   ├── 04-filebeat-config.yaml             # Filebeat ConfigMap
+│   └── 05-filebeat-daemonset.yaml          # Filebeat DaemonSet (runs on all nodes)
+│
+├── k8s-manifests/                          # 🚀 Application Manifests
+│   ├── deployment.yaml                     # Java app deployment (1 replica, port 8080)
+│   ├── service-nodeport.yaml               # NodePort service (port 30080)
+│   └── ingress.yaml                        # Nginx Ingress (domain: bksuresh.com.np)
+│
+├── Screenshots/                            # 📸 Documentation Images
+│   ├── Task1/                              # Cluster setup verification
+│   ├── Task2/                              # Application deployment
+│   ├── Task3/                              # Service & Ingress configuration
+│   ├── Task4/                              # ELK stack deployment
+│   └── Task5/                              # Monitoring & logs
+│
+├── src/main/webapp/                        # 🌐 Web Application
+│   └── [Java WAR application files]
+│
+├── Dockerfile                              # 🐳 Container image definition
+├── pom.xml                                 # 📦 Maven dependencies
+├── .gitignore                              # 🚫 Git exclusions
+└── README.md                               # 📖 Project documentation
+```
+
+## 📧 Contact
+
+**Name:** Suresh B.k 
+**Email:** pingsuresh3@gmail.com
+**Phone:** 9823592234
+**GitHub:** https://github.com/Tezen96/Esewa-Assignment.git
+**Submission Date:** January 3, 2026
