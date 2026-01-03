@@ -301,23 +301,69 @@ sudo kubeadm join 192.168.1.69:6443 --token <token> \
 
 ---
 
-### 3. Verify Cluster Health
+#### 4. Check System Pods
+
+<div align="center">
+  <img src="Screenshots/Task1/04-kube-A.png" 
+       alt="pod-state" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 4:All pods are running State.</i></p>
+</div>
+
+---
+
+## 🛠️ Troubleshooting - Task 1
+
+### Issue: Worker Node Join Failure
+
+**Error Message:**
 ```bash
-kubectl cluster-info
+[ERROR FileAvailable--etc-kubernetes-pki-ca.crt]: /etc/kubernetes/pki/ca.crt already exists
 ```
 
-**Expected Output:**
-```
-Kubernetes control plane is running at https://192.168.1.69:6443
-CoreDNS is running at https://192.168.1.69:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-```
+---
 
-### 4. Check System Pods
+### Quick Fix Steps
+
+**Step 1: Verify containerd**
 ```bash
-kubectl get pods -n kube-system
+sudo systemctl status containerd
+sudo systemctl restart containerd
 ```
 
-All pods should be in `Running` state.
+**Step 2: Set Hostname**
+```bash
+sudo hostnamectl set-hostname k8s-worker
+```
+
+**Step 3: Update /etc/hosts**
+```bash
+sudo vi /etc/hosts
+# Add these lines:
+192.168.1.69    k8s-master
+127.0.0.1       k8s-worker
+```
+
+**Step 4: Clean Previous Config**
+```bash
+sudo kubeadm reset -f
+sudo rm -rf /etc/cni/net.d /etc/kubernetes/ /var/lib/kubelet/ /var/lib/etcd/
+sudo iptables -F && sudo iptables -t nat -F && sudo iptables -t mangle -F && sudo iptables -X
+sudo systemctl restart containerd
+```
+
+**Step 5: Rejoin Cluster**
+```bash
+sudo kubeadm join 192.168.1.69:6443 --token  \
+  --discovery-token-ca-cert-hash sha256:
+```
+
+**Step 6: Verify**
+```bash
+kubectl get nodes
+# Both nodes  show "Ready" status
+```
 
 ---
 
