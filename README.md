@@ -9,8 +9,6 @@
 
 ## 📑 Table of Contents
 
-## 📑 Table of Contents
-
 - [Overview](#-overview)
 - [Architecture](#️-architecture)
 - [Lab Environment](#lab-environment)
@@ -76,6 +74,75 @@ This project demonstrates a complete Kubernetes deployment with:
 ---
 
 ## 🏗️ Architecture
+
+Complete System Architecture
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              External Access Layer                              │
+│                                                                                 │
+│  Windows Host (192.168.1.66)                                                    │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │ 
+│  │  Browser/Client                                                          │   │
+│  │  • http://192.168.1.69:30080 (NodePort - Master)                        │    │
+│  │  • http://192.168.1.64:30080 (NodePort - Worker)                        │    │
+│  │  • http://bksuresh.com.np:32690 (Ingress)                               │     │
+│  │  • http://192.168.1.69:30561 (Kibana Dashboard)                         │     │
+│  └────────────────┬─────────────────────────────────────────────────────────┘    │
+└───────────────────┼──────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        Kubernetes Cluster (v1.28.15)                            │
+│                                                                                  │
+│  ┌─────────────────────────────────┐    ┌──────────────────────────────────┐  │
+│  │   Master Node (k8s-master)      │    │   Worker Node (k8s-worker)       │  │
+│  │   IP: 192.168.1.69              │    │   IP: 192.168.1.64               │  │
+│  │   RAM: 4GB | CPU: 2 cores       │    │   RAM: 4GB | CPU: 2 cores        │  │
+│  │   Disk: 20GB                    │    │   Disk: 30GB                     │  │
+│  ├─────────────────────────────────┤    ├──────────────────────────────────┤  │
+│  │                                 │    │                                  │  │
+│  │  Control Plane Components:      │    │  Application Workloads:          │  │
+│  │  ├─ kube-apiserver             │    │  ├─ esewa-app (Tomcat:9.0)      │  │
+│  │  ├─ kube-controller-manager    │    │  │   • Container Port: 8080     │  │
+│  │  ├─ kube-scheduler             │    │  │   • Replicas: 1              │  │
+│  │  ├─ etcd                       │    │  │   • Image: suresh53/esewa:v1 │  │
+│  │  └─ CoreDNS                    │    │  └─────────────────────────────  │  │
+│  │                                 │    │                                  │  │
+│  │  Logging Stack (namespace: logging): │  Networking Components:          │  │
+│  │  ├─ Elasticsearch              │    │  ├─ NGINX Ingress Controller    │  │
+│  │  │   • Port: 9200              │    │  │   • NodePort: 32690 (HTTP)   │  │
+│  │  │   • Storage: hostPath       │    │  │   • Routes: bksuresh.com.np  │  │
+│  │  │   • Memory: 500Mi           │    │  ├─ kube-proxy                  │  │
+│  │  │   • Indices: app-logs-*     │◄───┼──┤ Flannel CNI Agent            │  │
+│  │  │                             │    │  └─────────────────────────────  │  │
+│  │  ├─ Kibana                     │    │                                  │  │
+│  │  │   • NodePort: 30561         │    │  Log Collection:                 │  │
+│  │  │   • Memory: 512Mi           │    │  └─ Filebeat DaemonSet          │  │
+│  │  │   • Dashboards: 1           │    │      • Collects container logs  │  │
+│  │  │                             │    │      • Memory: 100Mi per pod    │  │
+│  │  └─ Filebeat DaemonSet         │    │      • Sends to Elasticsearch   │  │
+│  │      • Collects container logs │    │                                  │  │
+│  │      • Monitors: /var/log/     │    │                                  │  │
+│  │                                 │    │                                  │  │
+│  │  Services:                      │    │  Services:                       │  │
+│  │  ├─ esewa-service-nodeport     │◄───┼──┤ ClusterIP: 10.108.101.85   │  │
+│  │  │   NodePort: 30080           │    │  │ Port: 8080                   │  │
+│  │  ├─ elasticsearch              │    │  └─ Endpoints: 10.244.1.5:8080  │  │
+│  │  │   ClusterIP: 10.96.x.x      │    │                                  │  │
+│  │  └─ kibana                     │    │  CNI: Flannel                    │  │
+│  │      NodePort: 30561           │    │  Pod CIDR: 10.244.0.0/16        │  │
+│  │                                 │    │                                  │  │
+│  └─────────────────────────────────┘    └──────────────────────────────────┘  │
+│                    │                                    │                       │
+│                    └────────────┬───────────────────────┘                       │
+│                                 │                                               │
+│                     Flannel Overlay Network                                     │
+│                     Pod Network: 10.244.0.0/16                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Container Runtime: containerd 2.2.1
+Network Plugin: Flannel CNI
+Storage: hostPath (Elasticsearch), emptyDir (others)
 
 ### Lab Environment
 
@@ -595,7 +662,7 @@ kubectl apply -f service-nodeport.yaml
        alt="NodePort access via master node" 
        width="45%" 
        style="display: inline-block; border: 1px solid #ddd; border-radius: 4px; padding: 5px; vertical-align: top;">
-  <p><i>Figure 02: Successful external access to Java application via NodePort through master and worker nodes.</i></p>
+  <p><i>Figure 03: Successful external access to Java application via NodePort through master and worker nodes.</i></p>
 </div>
 ---
 
@@ -617,7 +684,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/cont
        alt="Ingress Controller" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 02: Successfully running Ingress NGINX controller pods.</i></p>
+  <p><i>Figure 04: Successfully running Ingress NGINX controller pods.</i></p>
 </div>
 
 ---
@@ -626,7 +693,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/cont
        alt="Ingress Controller" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 02: List of services in the ingress-nginx namespace.</i></p>
+  <p><i>Figure 05: List of services in the ingress-nginx namespace.</i></p>
 </div>
 
 ---
@@ -696,7 +763,7 @@ Add the following entry to hosts file:
        alt="Hosts File Configuration" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 04: Hosts file configured for domain resolution.</i></p>
+  <p><i>Figure 08: Hosts file configured for domain resolution.</i></p>
 </div>
 
 ---
