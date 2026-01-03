@@ -824,3 +824,218 @@ http://bksuresh.com.np:32690
 
 ---
 [🔝 Back to Top](#table-of-contents)
+
+
+## 🛠️ Troubleshooting - Task 3
+
+
+### Issue 1: Ingress Controller Not Working
+
+**Symptom:**
+```bash
+kubectl get ingress
+NAME            CLASS   HOSTS             ADDRESS   PORTS   AGE
+esewa-ingress   nginx   bksuresh.com.np   <none>    80      5m
+```
+
+**Root Cause:**
+- Ingress Controller pods not running
+- Missing IngressClass
+
+**Solution:**
+```bash
+# Check Ingress Controller pods
+kubectl get pods -n ingress-nginx
+
+# If not running, reinstall
+kubectl delete namespace ingress-nginx
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/baremetal/deploy.yaml
+
+# Wait for pods to be ready
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
+```
+
+---
+
+### Issue 2: Domain Not Resolving (Ingress)
+
+**Symptom:**
+```bash
+curl: (6) Could not resolve host: bksuresh.com.np
+```
+
+**Root Cause:**
+- hosts file not configured
+- Wrong IP address in hosts file
+
+**Solution:**
+
+**Windows:**
+```cmd
+# Edit as Administrator
+notepad C:\Windows\System32\drivers\etc\hosts
+
+# Add line:
+192.168.1.68  bksuresh.com.np
+```
+
+
+---
+
+### Issue 2: Ingress Returns 404 Error
+
+**Symptom:**
+```bash
+curl http://bksuresh.com.np:32690
+<html>
+<head><title>404 Not Found</title></head>
+</html>
+```
+
+**Root Cause:**
+- Backend service name mismatch
+- Wrong service port in Ingress
+
+**Solution:**
+```bash
+# Verify backend service exists
+kubectl get svc esewa-service-nodeport
+
+# Check Ingress configuration
+kubectl describe ingress esewa-ingress
+
+# Ensure service name and port match
+# In ingress.yaml:
+backend:
+  service:
+    name: esewa-service-nodeport  # Must match actual service name
+    port:
+      number: 8080                # Must match service port
+```
+
+---
+
+[🔝 Back to Top](#table-of-contents)
+
+## ✅ Task 4: ELK Stack Setup
+
+### 4.1 Overview
+
+The ELK Stack (Elasticsearch, Logstash, Kibana) is deployed for centralized logging and monitoring of the Kubernetes cluster and applications.
+
+**Architecture:**
+
+**Note:** Logstash was omitted due to limited system resources. Filebeat sends logs directly to Elasticsearch..
+```
+┌──────────────┐
+│  Filebeat    │ (DaemonSet - runs on all nodes)
+│  (Collector) │
+└──────┬───────┘
+       │ Sends container logs
+       ▼
+┌──────────────┐
+│Elasticsearch │ (Storage & Indexing)
+│    :9200     │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Kibana     │ (Visualization Dashboard)
+│    :5601     │
+└──────────────┘
+```
+
+### 4.2 Component Specifications
+
+| Component | Version | Purpose | Resources | Service Type |
+|-----------|---------|---------|-----------|--------------|
+| Elasticsearch | 8.11.0 | Log storage & indexing | 500Mi RAM, 300m CPU | ClusterIP (9200) |
+| Kibana | 8.11.0| Log visualization | 512Mi RAM, 300m CPU | NodePort (30561) |
+| Filebeat | 8.11.0 | Log collection | 100Mi RAM, 50m CPU | DaemonSet |
+
+### 4.3 Namespace Setup
+
+**Create logging namespace:**
+
+**File:** ELK/
+01-namespace.yaml
+
+```
+kubectl apply -f 01-namespace.yaml
+kubectl get namespaces
+```
+
+<div align="center">
+  <img src="Screenshots/Task4/01-A.png" 
+       alt="Logging namespace creation" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 01: Logging namespace created for ELK Stack components.</i></p>
+</div>
+
+### 4.4 Elasticsearch Deployment
+
+**File:** `ELK/02-elasticsearch-master.yaml`
+
+**Key configurations:**
+- **Node Selector:** Runs on master node (`kubernetes.io/hostname: k8s-master`)
+- **Single-node mode:** `discovery.type=single-node`
+- **Security disabled:** `xpack.security.enabled=false` (for development)
+- **Storage:** Uses hostPath volume `/mnt/elasticsearch-data`
+- **Service Port:** 9200 (ClusterIP)
+
+
+**Deploy Elasticsearch:**
+```bash
+kubectl apply -f 02-elasticsearch-master.yaml
+kubectl get pods -n logging
+
+```
+
+<div align="center">
+  <img src="Screenshots/Task4/ELK-running.png" 
+       alt="Elasticsearch deployment" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 02: Elasticsearch pod running on master node.</i></p>
+</div>
+
+### 4.5 Kibana Deployment
+
+**File:** `ELK/03-kibana.yaml`
+
+**Key configurations:**
+- **Service Type:** NodePort (30561)
+- **Elasticsearch Connection:** `http://elasticsearch:9200`
+- **Access URL:** http://192.168.1.69:30561
+
+
+**Deploy Kibana:**
+```bash
+kubectl apply -f 03-kibana.yaml
+kubectl get svc -n logging
+```
+<div align="center">
+  <img src="Screenshots/Task4/svc.png" 
+       alt="svc-logging" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 03: services running in the logging namespace,.</i></p>
+</div>
+
+**Access Kibana Dashboard:**
+- URL: http://192.168.1.69:30561
+
+<div align="center">
+  <img src="Screenshots/Task4/kibana-dashboard.png" 
+       alt="Kibana dashboard access" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 04: Kibana dashboard accessible via NodePort on master node.</i></p>
+</div>
+
+
+
