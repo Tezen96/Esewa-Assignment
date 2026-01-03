@@ -11,6 +11,7 @@
 
 - [Overview](#-overview)
 - [Lab Environment](#lab-environment)
+- [Repository Structure](#-repository-structure)
 - [Task 1: Kubernetes Cluster Setup](#-task-1-kubernetes-cluster-setup)
   - [Cluster Information](#cluster-information)
   - [Kubernetes Master Node Setup](#-kubernetes-master-node-setup)
@@ -53,7 +54,6 @@
 - [Resource Usage Analysis](#-resource-usage-analysis)
 - [Lessons Learned](#-lessons-learned)
 - [Conclusion](#-conclusion)
-- [Repository Structure](#-repository-structure)
 - [Contact](#-contact)
 
 ---
@@ -80,6 +80,38 @@ This project demonstrates a complete Kubernetes deployment with:
 - **Network:** Internet connectivity required
 
 ---
+## 📁 Repository Structure
+```
+Esewa-Assignment/
+│
+├── ELK/                                    # 📊 ELK Stack Configuration
+│   ├── 01-namespace.yaml                   # Creates 'logging' namespace
+│   ├── 02-elasticsearch-master.yaml        # Elasticsearch StatefulSet (1 replica)
+│   ├── 03-kibana.yaml                      # Kibana Deployment (NodePort: 30562)
+│   ├── 04-filebeat-config.yaml             # Filebeat ConfigMap
+│   └── 05-filebeat-daemonset.yaml          # Filebeat DaemonSet (runs on all nodes)
+│
+├── k8s-manifests/                          # 🚀 Application Manifests
+│   ├── deployment.yaml                     # Java app deployment (1 replica, port 8080)
+│   ├── service-nodeport.yaml               # NodePort service (port 30080)
+│   └── ingress.yaml                        # Nginx Ingress (domain: bksuresh.com.np)
+│
+├── Screenshots/                            # 📸 Documentation Images
+│   ├── Task1/                              # Cluster setup verification
+│   ├── Task2/                              # Application deployment
+│   ├── Task3/                              # Service & Ingress configuration
+│   ├── Task4/                              # ELK stack deployment
+│   └── Task5/                              # Monitoring & logs
+│
+├── src/main/webapp/                        # 🌐 Web Application
+│   └── [Java WAR application files]
+│
+├── Dockerfile                              # 🐳 Container image definition
+├── pom.xml                                 # 📦 Maven dependencies
+├── .gitignore                              # 🚫 Git exclusions
+└── README.md                               # 📖 Project documentation
+```
+
 
 ## 🚀 Task 1: Kubernetes Cluster Setup
 
@@ -1739,40 +1771,6 @@ This implementation provides:
 3. **Debuggability:** Centralized logs for rapid troubleshooting
 4. **Scalability:** Foundation for horizontal pod autoscaling
 5. **Maintainability:** Well-documented architecture and procedures
-
-
-
-## 📁 Repository Structure
-```
-Esewa-Assignment/
-│
-├── ELK/                                    # 📊 ELK Stack Configuration
-│   ├── 01-namespace.yaml                   # Creates 'logging' namespace
-│   ├── 02-elasticsearch-master.yaml        # Elasticsearch StatefulSet (1 replica)
-│   ├── 03-kibana.yaml                      # Kibana Deployment (NodePort: 30562)
-│   ├── 04-filebeat-config.yaml             # Filebeat ConfigMap
-│   └── 05-filebeat-daemonset.yaml          # Filebeat DaemonSet (runs on all nodes)
-│
-├── k8s-manifests/                          # 🚀 Application Manifests
-│   ├── deployment.yaml                     # Java app deployment (1 replica, port 8080)
-│   ├── service-nodeport.yaml               # NodePort service (port 30080)
-│   └── ingress.yaml                        # Nginx Ingress (domain: bksuresh.com.np)
-│
-├── Screenshots/                            # 📸 Documentation Images
-│   ├── Task1/                              # Cluster setup verification
-│   ├── Task2/                              # Application deployment
-│   ├── Task3/                              # Service & Ingress configuration
-│   ├── Task4/                              # ELK stack deployment
-│   └── Task5/                              # Monitoring & logs
-│
-├── src/main/webapp/                        # 🌐 Web Application
-│   └── [Java WAR application files]
-│
-├── Dockerfile                              # 🐳 Container image definition
-├── pom.xml                                 # 📦 Maven dependencies
-├── .gitignore                              # 🚫 Git exclusions
-└── README.md                               # 📖 Project documentation
-```
 
 ## 📧 Contact
 
