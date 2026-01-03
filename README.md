@@ -693,3 +693,134 @@ $ kubectl describe ingress esewa-ingress
 </div>
 
 ---
+
+#### Step 3: Configure DNS/Hosts File
+
+**For Testing (Local Access):**
+
+Add the following entry to hosts file:
+
+
+**Windows:**
+```cmd
+# Run Notepad as Administrator
+# Open: C:\Windows\System32\drivers\etc\hosts
+
+# Added this line:
+192.168.1.68 bksuresh.com.np
+```
+
+<div align="center">
+  <img src="Screenshots/Task3/host.png" 
+       alt="Hosts File Configuration" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 04: Hosts file configured for domain resolution.</i></p>
+</div>
+
+---
+
+### Traffic Flow Explanation
+
+**Request Flow:**
+
+1. **User Request:** Browser accesses `http://bksuresh.com.np:32690`
+2. **DNS Resolution:** Domain `bksuresh.com.np` resolves to `192.168.1.68` (worker node IP)
+3. **NodePort:** Request hits worker node on port `32690` (NGINX Ingress Controller NodePort)
+4. **Ingress Controller:** NGINX controller receives the request and checks routing rules
+5. **Host Matching:** Ingress rules match `Host: bksuresh.com.np`
+6. **Path Routing:** Path `/` matches ingress path rule
+7. **Backend Service:** Routes to `esewa-service-nodeport` on port `8080`
+8. **Service:** Service forwards to pod IP `10.244.1.5:8080`
+9. **Pod Response:** Tomcat container in the pod serves the application
+10. **Return Path:** Response flows back through the same path to user
+
+**Traffic Flow Diagram:**
+```
+
+User Browser
+     │
+     │ http://bksuresh.com.np:32690
+     ▼
+DNS Resolution (/etc/hosts file)
+     │
+     │ 192.168.1.68:32690
+     ▼
+Worker Node (192.168.1.68)
+     │
+     │ NodePort 32690 (HTTP)
+     ▼
+NGINX Ingress Controller
+     │
+     │ Host: bksuresh.com.np
+     ▼
+Ingress Rules Evaluation
+     │
+     │ Path: / → Backend Service
+     ▼
+esewa-service-nodeport (ClusterIP)
+     │
+     │ Service IP: 10.108.101.85:8080
+     ▼
+eSewa Pod (10.244.1.5:8080)
+     │
+     │ Container: Tomcat
+     ▼
+Application Response
+     │
+     │ HTML/HTTP Response
+     ▼
+User Browser
+
+```
+
+---
+
+### Access Methods
+
+**Method 1: NodePort (Direct Access)**
+```
+http://192.168.1.68:30080
+http://192.168.1.69:30080
+```
+```
+--> Already Access showing in fig(3)
+```
+**Method 2: Ingress (Domain-based Access)**
+```
+http://bksuresh.com.np:32690
+```
+
+
+<div align="center">
+  <img src="Screenshots/Task3/ingress-domain(1).png" 
+       alt="welcome-page" 
+       width="45%" 
+       style="display: inline-block; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin-right: 10px; vertical-align: top;">
+  <img src="Screenshots/Task3/ingress-domain(2).png" 
+       alt="information" 
+       width="45%" 
+       style="display: inline-block; border: 1px solid #ddd; border-radius: 4px; padding: 5px; vertical-align: top;">
+  <p><i>Figure 09:Application accessible via Ingress using domain name
+ </i></p>
+</div>
+
+---
+
+### Summary
+
+✅ **NodePort Service:** Exposed on port 30080 across all nodes  
+✅ **Ingress Controller:** NGINX installed and running  
+✅ **Ingress Resource:** Domain-based routing configured  
+✅ **DNS Configuration:** Hosts file updated for local testing  
+✅ **Application Access:** Available via both NodePort and Ingress  
+
+**Key Benefits of Ingress:**
+- Single entry point for multiple services
+- Host and path-based routing
+- SSL/TLS termination support (future enhancement)
+- Load balancing across multiple pods
+- Centralized configuration management
+
+---
+[🔝 Back to Top](#table-of-contents)
