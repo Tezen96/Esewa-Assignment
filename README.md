@@ -369,7 +369,6 @@ kubectl get nodes
 
 ## 📦 Task 2: Java Application Deployment
 
-
 ### Application Overview
 
 **Application Details:**
@@ -396,7 +395,7 @@ sudo dnf install -y maven
        alt="mvn-version" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 5:verify maven is installed.</i></p>
+  <p><i>Figure 01:verify maven is installed.</i></p>
 </div>
 
 ---
@@ -412,7 +411,7 @@ cd Esewa-Assignment
        alt="git-clone" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 6:successful cloning of the Git repository.</i></p>
+  <p><i>Figure 02:successful cloning of the Git repository.</i></p>
 </div>
 
 ```bash
@@ -427,7 +426,7 @@ ls -lh target/*.war
        alt="war-file" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 6:successful creation of the WAR file.</i></p>
+  <p><i>Figure 03:successful creation of the WAR file.</i></p>
 </div>
 
 ---
@@ -491,12 +490,74 @@ docker push suresh53/esewa_app:v1
        alt="Docker Push Success" 
        width="700" 
        style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
-  <p><i>Figure 9: Image pushed to Docker Hub.</i></p>
+  <p><i>Figure 04: Image pushed to Docker Hub.</i></p>
 </div>
-
-
-
 
 ---
 
-**Note:** This is a living document. Please refer to the latest version for updates.
+### Step 5: Create Kubernetes Deployment
+
+**File:** `k8s-manifests/deployment.yaml`
+
+**Description:**
+- Kubernetes Deployment manifest for the Java application
+- Creates 1 replica pod running the Tomcat container
+- Container listens on port 8080
+- Uses `imagePullPolicy: Always` to ensure latest image is pulled
+- Labels: `app: esewa` for service selector matching
+
+**Key Configuration:**
+- **Image:** `docker.io/suresh53/esewa_app:v1`
+- **Container Port:** 8080
+- **Replicas:** 1
+- **Namespace:** default
+
+**Deploy to Kubernetes:**
+```bash
+kubectl apply -f k8s-manifests/deployment.yaml
+```
+
+**Verify Deployment:**
+```bash
+# Check deployment & pods status
+kubectl get deployment 
+kubectl get pods
+
+```
+**Output:**
+<div align="center">
+  <img src="Screenshots/Task2/05-deployment-pod.png" 
+       alt="deployment and pods" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 05: Deployment and pods status showing Ready state</i></p>
+</div>
+
+---
+#### Verify Application Logs
+
+```bash
+kubectl logs esewa-app-66b9c6b458-dt6ck --tail=20
+```
+
+**Output:**
+
+<div align="center">
+  <img src="Screenshots/Task2/06-pods-logs.png" 
+       alt="Pod logs" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 06: Tomcat started successfully.</i></p>
+</div>
+
+---
+
+### Summary
+
+✅ **WAR File:** Built using Maven  
+✅ **Docker Image:** Created and pushed to Docker Hub  
+✅ **Kubernetes Deployment:** Pod running successfully  
+✅ **Application Status:** Tomcat started, ready to serve requests  
+
+---
+
