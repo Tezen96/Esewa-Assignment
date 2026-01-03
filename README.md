@@ -369,81 +369,133 @@ kubectl get nodes
 
 ## 📦 Task 2: Java Application Deployment
 
-*(Section to be completed with Dockerfile, deployment manifests, and verification steps)*
+
+### Application Overview
+
+**Application Details:**
+- **Name:** Esewa Web Application
+- **Technology:** Java Servlet & JSP
+- **Build Tool:** Maven 3.6.3
+- **Java Version:** JDK 17
+- **Application Server:** Apache Tomcat 9.0
+- **Source Code:** [GitHub Repository](https://github.com/Tezen96/Esewa-Assignment.git)
 
 ---
 
-## 🌐 Task 3: Service Exposure
+### Step 1: Build WAR File
 
-*(Section to be completed with NodePort and Ingress configuration)*
-
----
-
-## 📊 Task 4: ELK Stack Setup
-
-*(Section to be completed with Elasticsearch, Kibana, and Filebeat deployment)*
-
----
-
-## 🔍 Task 5: Monitoring & Verification
-
-*(Section to be completed with Kibana dashboard configuration and traffic simulation)*
-
----
-
-## 🔗 Access Information
-
-*(Section to be completed with URLs and access credentials)*
-
----
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-**Issue:** Nodes not reaching Ready state
+#### Install Maven 
 ```bash
-kubectl describe node <node-name>
-kubectl get pods -n kube-system
+sudo dnf install -y maven
+
+```
+#### Verification
+
+<div align="center">
+  <img src="Screenshots/Task2/01-mvn-version.png" 
+       alt="mvn-version" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 5:verify maven is installed.</i></p>
+</div>
+
+---
+
+#### Clone Repository and Build
+```bash
+# Clone from GitHub
+git clone https://github.com/Tezen96/Esewa-Assignment.git
+cd Esewa-Assignment
+```
+<div align="center">
+  <img src="Screenshots/Task2/03-git clone project.png" 
+       alt="git-clone" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 6:successful cloning of the Git repository.</i></p>
+</div>
+
+```bash
+# Build WAR file
+mvn clean package
+
+# Verify WAR file
+ls -lh target/*.war
+```
+<div align="center">
+  <img src="Screenshots/Task2/02-war-file.png" 
+       alt="war-file" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 6:successful creation of the WAR file.</i></p>
+</div>
+
+---
+
+### Step 2: Containerize Application
+
+#### Dockerfile Explanation
+
+The application uses the following Dockerfile:
+```dockerfile
+FROM tomcat:9.0-jdk17
+
+# Remove default webapps
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Copy WAR file to ROOT context
+COPY target/Esewa-webapp.war /usr/local/tomcat/webapps/ROOT.war
+
+# Expose Tomcat port
+EXPOSE 8080
+
+# Start Tomcat server
+CMD ["catalina.sh", "run"]
 ```
 
-**Issue:** containerd service failing
+**Key Points:**
+- **Base Image:** `tomcat:9.0-jdk17` provides Tomcat server with Java 17
+- **Clean Webapps:** Removes default Tomcat applications
+- **ROOT Context:** Deploys application at root path (`/`)
+- **Port 8080:** Standard Tomcat HTTP port
+- **Startup Command:** Runs Tomcat in foreground mode
+
+---
+
+### Step 3: Build Docker Image
 ```bash
-sudo systemctl status containerd
-sudo journalctl -xeu containerd
+# Build Docker image
+docker build -t esewa_app:v1 .
+
+# Verify image
+docker images | grep esewa
+```
+---
+
+### Step 4: Push to Docker Hub
+```bash
+# Login to Docker Hub
+docker login
+
+# Tag image
+docker tag esewa_app:v1 suresh53/esewa_app:v1
+
+# Push to Docker Hub
+docker push suresh53/esewa_app:v1
 ```
 
-**Issue:** Pod network not working
-```bash
-kubectl get pods -n kube-system | grep flannel
-kubectl logs -n kube-system <flannel-pod-name>
-```
+**Docker Hub:** [suresh53/esewa_app:v1](https://hub.docker.com/repository/docker/suresh53/esewa_app/tags)
 
----
+<div align="center">
+  <img src="Screenshots/Task2/04-push- to dockerhub.png" 
+       alt="Docker Push Success" 
+       width="700" 
+       style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+  <p><i>Figure 9: Image pushed to Docker Hub.</i></p>
+</div>
 
-## 📚 Lessons Learned
 
-*(Section to be completed with insights and best practices)*
 
----
-
-## 🎓 Conclusion
-
-This project successfully demonstrates a production-grade Kubernetes cluster setup with comprehensive logging and monitoring capabilities using the ELK stack.
-
----
-
-## 📧 Contact
-
-**Candidate:** Suresh B.K  
-**Email:** [Your Email]  
-**Date:** January 2, 2026
-
----
-
-## 📝 License
-
-This project is submitted as part of a technical assignment for the System Support Engineer position.
 
 ---
 
